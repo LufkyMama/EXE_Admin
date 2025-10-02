@@ -114,3 +114,22 @@ export const updateRole = async (
 export const deleteUser = async (id: number | string): Promise<void> => {
   await api.delete(`/User/${id}`);
 };
+
+/** Lấy 5 user mới tạo gần đây */
+export const listRecentUsers = async (limit = 5): Promise<User[]> => {
+  // lấy nhiều hơn 1 chút để đủ dữ liệu sắp xếp
+  const pageSize = Math.max(limit, 20);
+  const page1 = await listUsersPaged(1, pageSize);
+
+  // nếu BE đã trả theo thứ tự mới nhất -> cắt thẳng
+  // nếu không, sort bằng createdAt (nếu có), hoặc id desc
+  const sorted = [...page1.items].sort((a: any, b: any) => {
+    const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+    if (ta && tb) return tb - ta;          // mới trước
+    // fallback id desc
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+
+  return sorted.slice(0, limit);
+};

@@ -3,7 +3,7 @@ import {
   createChallenge,
   deleteChallenge,
   listChallenges,
-  updateChallenge,
+  setChallengeStatus,
 } from "@/services/challengeApi";
 import type { Challenge } from "@/types";
 import Button from "@/components/ui/Button";
@@ -13,14 +13,16 @@ import Badge from "@/components/ui/Badge";
 export default function Challenges() {
   const [items, setItems] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<Partial<Challenge>>({
+
+  // Form tạo mới (gọn)
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createForm, setCreateForm] = useState<Partial<Challenge>>({
     name: "",
     description: "",
     startDate: "",
     endDate: "",
     isComplete: false,
   });
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -30,110 +32,76 @@ export default function Challenges() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     load();
   }, []);
 
-  const submit = async (e: React.FormEvent) => {
+  // tạo mới
+  const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name) return;
-    if (editingId) {
-      await updateChallenge(editingId, form);
-    } else {
-      await createChallenge(form);
-    }
-    setForm({
+    if (!createForm.name) return;
+    await createChallenge(createForm);
+    setCreateForm({
       name: "",
       description: "",
       startDate: "",
       endDate: "",
       isComplete: false,
     });
-    setEditingId(null);
+    setOpenCreate(false);
     load();
   };
 
-  const edit = (c: Challenge) => {
-    setEditingId(c.id);
-    setForm({
-      name: c.name,
-      description: c.description,
-      startDate: c.startDate?.slice(0, 10),
-      endDate: c.endDate?.slice(0, 10),
-      isComplete: false,
-    });
-  };
+  const fmt = (d?: string | null) =>
+    d ? new Date(d).toLocaleDateString("vi-VN") : "—";
+
   return (
     <div>
       <h1 className="text-3xl font-semibold text-emerald-600 mb-6">
         Challenges
       </h1>
-      {/* Form */}
-      <form
-        onSubmit={submit}
-        className="bg-white border rounded-2xl p-4 mb-6 grid grid-cols-5 gap-3"
-      >
-        <Input
-          placeholder="Name"
-          value={form.name || ""}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-        />
-        <Input
-          placeholder="Description"
-          value={form.description || ""}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, description: e.target.value }))
-          }
-        />
-        <Input
-          type="date"
-          value={form.startDate || ""}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, startDate: e.target.value }))
-          }
-        />
-        <Input
-          type="date"
-          value={form.endDate || ""}
-          onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-        />
-        <select
-          className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-          value={form.isComplete ? "DONE" : "NOT DONE"}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, isComplete: e.target.value === "DONE" }))
-          }
+
+      {/* Tạo mới — gọn, mở khi cần */}
+      <div className="mb-4">
+        <Button onClick={() => setOpenCreate(v => !v)}>
+          {openCreate ? "Close" : "New Challenge"}
+        </Button>
+      </div>
+
+      {openCreate && (
+        <form
+          onSubmit={submitCreate}
+          className="bg-white border rounded-2xl p-4 mb-6 grid grid-cols-5 gap-3"
         >
-          <option value="NOT DONE">NOT DONE</option>
-          <option value="DONE">DONE</option>
-        </select>
-        <div className="col-span-5">
-          <Button type="submit">
-            {editingId ? "Update" : "Create"} challenge
-          </Button>
-          {editingId && (
-            <Button
-              type="button"
-              className="ml-2"
-              onClick={() => {
-                setEditingId(null);
-                setForm({
-                  name: "",
-                  description: "",
-                  startDate: "",
-                  endDate: "",
-                  isComplete: false,
-                });
-              }}
-            >
-              Cancel
-            </Button>
-          )}
-        </div>
-      </form>
+          <Input
+            placeholder="Name"
+            value={createForm.name || ""}
+            onChange={(e) => setCreateForm(f => ({ ...f, name: e.target.value }))}
+          />
+          <Input
+            placeholder="Description"
+            value={createForm.description || ""}
+            onChange={(e) => setCreateForm(f => ({ ...f, description: e.target.value }))}
+          />
+          <Input
+            type="date"
+            value={createForm.startDate || ""}
+            onChange={(e) => setCreateForm(f => ({ ...f, startDate: e.target.value }))}
+          />
+          <Input
+            type="date"
+            value={createForm.endDate || ""}
+            onChange={(e) => setCreateForm(f => ({ ...f, endDate: e.target.value }))}
+          />
+          <div className="col-span-5">
+            <Button type="submit">Create challenge</Button>
+          </div>
+        </form>
+      )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border overflow-hidden">
+      <div className="bg-white rounded-2xl border overflow-visible">
         {loading ? (
           <div className="p-6">Loading…</div>
         ) : (
@@ -157,34 +125,62 @@ export default function Challenges() {
                   </td>
                   <td className="p-3">{c.name}</td>
                   <td className="p-3">{c.description}</td>
-                  <td className="p-3">
-                    {c.startDate
-                      ? new Date(c.startDate).toLocaleDateString("vi-VN")
-                      : "—"}
-                  </td>
-                  <td className="p-3">
-                    {c.endDate
-                      ? new Date(c.endDate).toLocaleDateString("vi-VN")
-                      : "—"}
-                  </td>
+                  <td className="p-3">{fmt(c.startDate)}</td>
+                  <td className="p-3">{fmt(c.endDate)}</td>
                   <td className="p-3">
                     <Badge color={c.isComplete ? "green" : "red"}>
                       {c.isComplete ? "DONE" : "NOT DONE"}
                     </Badge>
                   </td>
-                  <td className="p-3 space-x-3">
-                    <button className="text-blue-600" onClick={() => edit(c)}>
-                      Edit
-                    </button>
-                    <button
-                      className="text-red-600"
-                      onClick={async () => {
-                        await deleteChallenge(c.id);
-                        load();
-                      }}
-                    >
-                      Delete
-                    </button>
+                  <td className="p-3 relative">
+                    <details className="relative">
+                      <summary className="list-none cursor-pointer select-none">
+                        <span className="inline-flex items-center justify-center
+                                         px-3 py-1.5 rounded-lg border text-blue-600
+                                         hover:bg-slate-50">
+                          Action ▾
+                        </span>
+                      </summary>
+                      <div className="absolute z-50 right-0 mt-2 w-56 rounded-2xl border bg-white shadow-xl p-2 text-[14px] leading-6">
+                        <div className="px-3 pt-1 pb-1 text-xs font-medium text-slate-400">
+                          Status
+                        </div>
+                        {c.isComplete ? (
+                          <button
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 rounded-lg"
+                            onClick={async () => {
+                              await setChallengeStatus(c, false);
+                              load();
+                            }}
+                          >
+                            Mark as NOT DONE
+                          </button>
+                        ) : (
+                          <button
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 rounded-lg"
+                            onClick={async () => {
+                              await setChallengeStatus(c, true);
+                              load();
+                            }}
+                          >
+                            Mark as DONE
+                          </button>
+                        )}
+
+                        <hr className="my-2" />
+
+                        <button
+                          className="w-full text-left px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
+                          onClick={async () => {
+                            if (!confirm(`Delete "${c.name}"?`)) return;
+                            await deleteChallenge(c.id);
+                            load();
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </details>
                   </td>
                 </tr>
               ))}
