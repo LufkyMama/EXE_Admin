@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [target, setTarget] = useState<User | null>(null);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
+  // const [sending, setSending] = useState(false);
   const closeModal = () => { setTarget(null); setTitle(""); setMessage(""); };
 
   useEffect(() => {
@@ -60,20 +60,20 @@ export default function Dashboard() {
     );
   };
 
-  const submitNotification = async () => {
-    if (!target) return;
-    if (!title.trim() || !message.trim()) return;
-    setSending(true);
-    try {
-      await sendNotification({ userId: Number(target.id), title, message });
-      closeModal();
-      // có thể show toast thành công ở đây
-    } catch (e) {
-      // có thể show toast lỗi ở đây
-    } finally {
-      setSending(false);
-    }
-  };
+  // const submitNotification = async () => {
+  //   if (!target) return;
+  //   if (!title.trim() || !message.trim()) return;
+  //   setSending(true);
+  //   try {
+  //     await sendNotification({ userId: Number(target.id), title, message });
+  //     closeModal();
+  //     // có thể show toast thành công ở đây
+  //   } catch (e) {
+  //     // có thể show toast lỗi ở đây
+  //   } finally {
+  //     setSending(false);
+  //   }
+  // };
 
   return (
     <div className="grid grid-cols-12 gap-8">
@@ -194,7 +194,7 @@ export default function Dashboard() {
               </button>
               <button
                 className="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                onClick={submitNotification}
+                // onClick={submitNotification}
                 disabled={sending || !title.trim() || !message.trim()}
               >
                 {sending ? "Sending…" : "Send"}

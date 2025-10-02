@@ -7,10 +7,17 @@ export type User = {
   id: number | string;
   userName: string;
   email: string;
-  phoneNumber?: string | null;
-  role: Role;                    // số
-  dateOfBirth?: string | null;   // "0001-01-01" coi như null khi hiển thị
-  subscriptionType: SubscriptionType; // số
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+
+  // BE trả số: 1=Admin, 2=User, 3=Staff (ví dụ)
+  role: 1 | 2 | 3;
+
+  // 1=Free, 2=VIP25, 3=VIP50 (ví dụ)
+  subscriptionType: 1 | 2 | 3;
+
+  // optional BE fields
+  createdAt?: string;
 };
 
 export type AuthResult = {

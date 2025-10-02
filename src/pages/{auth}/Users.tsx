@@ -49,20 +49,25 @@ export default function Users() {
 
   const allChecked = users.length > 0 && selected.size === users.length;
   const toggleAll = () =>
-    setSelected((prev) =>
-      allChecked ? new Set() : new Set(users.map((u) => u.id as any))
-    );
+    setSelected((_prev) => (allChecked ? new Set() : new Set(users.map((u) => u.id as any))));
 
   const fmtDate = (d?: string | null) =>
     !d || isNullDate(d) ? "—" : new Date(d).toLocaleDateString("vi-VN");
 
   const data = useMemo(
-    () =>
-      [...users].sort((a, b) =>
-        (a.userName || "").localeCompare(b.userName || "")
-      ),
+    () => [...users].sort((a, b) => (a.userName || "").localeCompare(b.userName || "")),
     [users]
   );
+
+  // Chuẩn hoá đảm bảo gửi số cho API (tránh lỗi string->number)
+  const toRoleId = (r: unknown): 1 | 2 | 3 | undefined => {
+    const n = typeof r === "number" ? r : parseInt(String(r), 10);
+    return (n === 1 || n === 2 || n === 3) ? (n as 1 | 2 | 3) : undefined;
+  };
+  const toSubId = (s: unknown): 1 | 2 | 3 | undefined => {
+    const n = typeof s === "number" ? s : parseInt(String(s), 10);
+    return (n === 1 || n === 2 || n === 3) ? (n as 1 | 2 | 3) : undefined;
+  };
 
   // Actions
   const handleMakeRole = async (u: User, r: 1 | 2 | 3) => {
@@ -83,20 +88,14 @@ export default function Users() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-emerald-600 mb-6">
-        User Management
-      </h1>
+      <h1 className="text-3xl font-semibold text-emerald-600 mb-6">User Management</h1>
 
       <div className="bg-white rounded-2xl border overflow-visible relative">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="p-3 text-left w-10">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  onChange={toggleAll}
-                />
+                <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
               <th className="p-3 text-left">User Name</th>
               <th className="p-3 text-left">Date of birth</th>
@@ -111,21 +110,15 @@ export default function Users() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={8}>
-                  Loading…
-                </td>
+                <td className="p-4 text-slate-500" colSpan={8}>Loading…</td>
               </tr>
             ) : error ? (
               <tr>
-                <td className="p-4 text-red-600" colSpan={8}>
-                  {error}
-                </td>
+                <td className="p-4 text-red-600" colSpan={8}>{error}</td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={8}>
-                  No users
-                </td>
+                <td className="p-4 text-slate-500" colSpan={8}>No users</td>
               </tr>
             ) : (
               data.map((u) => (
@@ -142,86 +135,39 @@ export default function Users() {
                   <td className="p-3">{u.email}</td>
                   <td className="p-3">{u.phoneNumber || "—"}</td>
                   <td className="p-3">
-                    <Badge color={subBadgeColor(u.subscriptionType)}>
-                      {subLabel(u.subscriptionType)}
+                    <Badge color={subBadgeColor(toSubId(u.subscriptionType) ?? 1)}>
+                      {subLabel(toSubId(u.subscriptionType) ?? 1)}
                     </Badge>
                   </td>
                   <td className="p-3">
-                    <Badge color={roleBadgeColor(u.role)}>
-                      {roleLabel(u.role)}
+                    <Badge color={roleBadgeColor(toRoleId(u.role) ?? 2)}>
+                      {roleLabel(toRoleId(u.role) ?? 2)}
                     </Badge>
                   </td>
                   <td className="p-3 relative">
                     <details className="relative">
                       <summary className="list-none cursor-pointer select-none">
-                        <span
-                          className="inline-flex items-center justify-center
-                       px-3 py-1.5 rounded-lg border text-blue-600
-                       hover:bg-slate-50"
-                        >
+                        <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border text-blue-600 hover:bg-slate-50">
                           Action ▾
                         </span>
                       </summary>
 
-                      {/* Menu lớn hơn, rõ ràng hơn */}
-                      <div
-                        className="absolute z-50 right-0 mt-2 w-64 rounded-2xl border bg-white shadow-xl p-2
-                 text-[14px] leading-6"
-                      >
-                        <div className="px-3 pt-1 pb-1 text-xs font-medium text-slate-400">
-                          Role
-                        </div>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleMakeRole(u, 1)}
-                        >
-                          Make Admin
-                        </button>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleMakeRole(u, 3)}
-                        >
-                          Make Staff
-                        </button>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleMakeRole(u, 2)}
-                        >
-                          Make User
-                        </button>
+                      <div className="absolute z-50 right-0 mt-2 w-64 rounded-2xl border bg-white shadow-xl p-2 text-[14px] leading-6">
+                        <div className="px-3 pt-1 pb-1 text-xs font-medium text-slate-400">Role</div>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleMakeRole(u, 1)}>Make Admin</button>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleMakeRole(u, 3)}>Make Staff</button>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleMakeRole(u, 2)}>Make User</button>
 
                         <hr className="my-2" />
 
-                        <div className="px-3 pt-1 pb-1 text-xs font-medium text-slate-400">
-                          Subscription
-                        </div>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleSetSub(u, 2)}
-                        >
-                          Set VIP 25
-                        </button>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleSetSub(u, 3)}
-                        >
-                          Set VIP 50
-                        </button>
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg"
-                          onClick={() => handleSetSub(u, 1)}
-                        >
-                          Set Free
-                        </button>
+                        <div className="px-3 pt-1 pb-1 text-xs font-medium text-slate-400">Subscription</div>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleSetSub(u, 2)}>Set VIP 25</button>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleSetSub(u, 3)}>Set VIP 50</button>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-slate-50 rounded-lg" onClick={() => handleSetSub(u, 1)}>Set Free</button>
 
                         <hr className="my-2" />
 
-                        <button
-                          className="flex w-full items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
-                          onClick={() => handleDelete(u)}
-                        >
-                          Delete
-                        </button>
+                        <button className="flex w-full items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg" onClick={() => handleDelete(u)}>Delete</button>
                       </div>
                     </details>
                   </td>

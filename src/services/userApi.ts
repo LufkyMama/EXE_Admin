@@ -31,16 +31,23 @@ type PagedPayload<T> = {
     hasPreviousPage: boolean;
   };
 };
-
+const toRole = (v: any): 1 | 2 | 3 => {
+  const n = Number(v);
+  return (n === 1 || n === 2 || n === 3) ? (n as 1 | 2 | 3) : 2; // default User
+};
+const toSub = (v: any): 1 | 2 | 3 => {
+  const n = Number(v);
+  return (n === 1 || n === 2 || n === 3) ? (n as 1 | 2 | 3) : 1; // default Free
+};
 /** Chuẩn hoá một user (chỉ ép kiểu, không đổi field name) */
 const normalizeUser = (u: any): User => ({
   id: u?.id,
   userName: u?.userName ?? "",
   email: u?.email ?? "",
   phoneNumber: u?.phoneNumber ?? null,
-  role: Number(u?.role) || 2,
+  role: toRole(u?.role),
   dateOfBirth: u?.dateOfBirth ?? null,
-  subscriptionType: Number(u?.subscriptionType) || 1,
+  subscriptionType: toSub(u?.subscriptionType),
 });
 
 /** GET /api/User (paging) */

@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip, Label } from "recharts";
+import type { LabelProps } from "recharts";
 import { fetchUserActivities, type UserActivityRow } from "@/services/userActivityApi";
 
 /** Màu đúng tông Figma: Plastic=blue-slate, Transport=amber, Energy=green, Food=violet */
 const COLORS = ["#1f2937", "#f59e0b", "#22c55e", "#8b5cf6"];
 const NAME_INDEX: Record<string, number> = { Plastic: 0, Transportation: 1, Energy: 2, Food: 3 };
 const MIN_LABEL_PCT = 1;
-
-/** viewBox type hẹp cho Label center (tránh cảnh báo TS) */
-type CenterLabelProps = { viewBox?: { cx?: number; cy?: number } };
 
 /** Chuẩn hoá YYYY-MM-DD (UTC) để khớp payload có 'Z' */
 function toDateKeySafe(d?: Date | string | null): string {
@@ -44,7 +42,7 @@ export default function ActivityPieChart() {
     return () => { cancelled = true; };
   }, []);
 
-  // Tổng theo ngày chọn -> % theo 4 nhóm (đúng bố cục Figma)
+  // Tổng theo ngày chọn -> % theo 4 nhóm
   const { chartData, pieData, totalRaw } = useMemo(() => {
     const totals = { plastic: 0, transportation: 0, energy: 0, food: 0 };
 
@@ -70,9 +68,25 @@ export default function ActivityPieChart() {
     return { chartData: filtered, pieData: all, totalRaw: sum };
   }, [rows, dateKey]);
 
+  // Label ở giữa donut: dùng đúng type của Recharts để tránh TS2322
+  const renderCenterLabel: NonNullable<LabelProps["content"]> = (props) => {
+    const vb: any = props.viewBox; // Recharts runtime có cx, cy
+    const cx = vb?.cx;
+    const cy = vb?.cy;
+    if (typeof cx !== "number" || typeof cy !== "number") return null;
+
+    return (
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central">
+        <tspan className="fill-slate-500 text-xs">My Daily Activities</tspan>
+        <tspan x={cx} dy="1.2em" className="fill-slate-900 text-sm font-semibold">
+          {totalRaw.toFixed(2)} CO₂e
+        </tspan>
+      </text>
+    );
+  };
+
   return (
     <div className="w-full">
-      {/* Date picker (Figma có filter ngày) */}
       <div className="mb-3">
         <input
           type="date"
@@ -92,7 +106,7 @@ export default function ActivityPieChart() {
         </div>
       ) : (
         <div className="flex items-start gap-6 h-64">
-          {/* Donut chart bên trái */}
+          {/* Donut chart */}
           <div className="flex-1 h-full">
             <ResponsiveContainer>
               <PieChart>
@@ -116,23 +130,7 @@ export default function ActivityPieChart() {
                   {chartData.map((d) => (
                     <Cell key={d.name} fill={COLORS[NAME_INDEX[d.name]]} />
                   ))}
-                  {/* Nhãn giữa: "My Daily Activities" + tổng CO2e (đúng Figma) */}
-                  <Label
-                    position="center"
-                    content={({ viewBox }: CenterLabelProps) => {
-                      const cx = typeof viewBox?.cx === "number" ? viewBox!.cx! : undefined;
-                      const cy = typeof viewBox?.cy === "number" ? viewBox!.cy! : undefined;
-                      if (cx === undefined || cy === undefined) return null;
-                      return (
-                        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
-                          <tspan className="fill-slate-500 text-xs">My Daily Activities</tspan>
-                          <tspan x={cx} dy="1.2em" className="fill-slate-900 text-sm font-semibold">
-                            {totalRaw.toFixed(2)} CO₂e
-                          </tspan>
-                        </text>
-                      );
-                    }}
-                  />
+                  <Label position="center" content={renderCenterLabel} />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
@@ -152,9 +150,7 @@ export default function ActivityPieChart() {
                       />
                       <span>{d.name}</span>
                     </span>
-                    <span className="font-medium">
-                      {d.value.toFixed(1)}%
-                    </span>
+                    <span className="font-medium">{d.value.toFixed(1)}%</span>
                   </li>
                 ))}
             </ul>
