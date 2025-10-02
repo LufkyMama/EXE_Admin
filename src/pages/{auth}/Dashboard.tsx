@@ -188,16 +188,16 @@ export default function Dashboard() {
               <button
                 className="px-4 py-2 rounded-xl border text-slate-700 hover:bg-slate-50"
                 onClick={closeModal}
-                disabled={sending}
+                // disabled={sending}
               >
                 Cancel
               </button>
               <button
                 className="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
                 // onClick={submitNotification}
-                disabled={sending || !title.trim() || !message.trim()}
+                // disabled={sending || !title.trim() || !message.trim()}
               >
-                {sending ? "Sending…" : "Send"}
+                {/* {sending ? "Sending…" : "Send"} */}
               </button>
             </div>
           </div>
