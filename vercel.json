@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://20.255.49.18/api/$1" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/api/:path*", "destination": "https://exe-be.amayakuro.com/api/:path*" }
   ]
 }
