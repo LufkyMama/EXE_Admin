@@ -51,7 +51,7 @@ const normalizeUser = (u: any): User => ({
 });
 
 /** GET /api/User (paging) */
-export const listUsersPaged = async (page = 1, pageSize = 10) => {
+export const listUsersPaged = async (page = 1, pageSize = 10000) => {
   const { data } = await api.get<PagedPayload<User>>("/User", {
     params: { page, pageSize },
   });
@@ -70,7 +70,7 @@ export const listUsersPaged = async (page = 1, pageSize = 10) => {
 };
 
 /** Tiện: nếu chỉ cần mảng users */
-export const listUsers = async (page = 1, pageSize = 10) => {
+export const listUsers = async (page = 1, pageSize = 10000) => {
   const res = await listUsersPaged(page, pageSize);
   return res.items;
 };

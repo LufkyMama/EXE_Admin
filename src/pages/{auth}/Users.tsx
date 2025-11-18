@@ -19,7 +19,7 @@ export default function Users() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number | string>>(new Set());
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const refresh = async (p = page) => {
     setLoading(true);
@@ -28,6 +28,7 @@ export default function Users() {
       const res = await listUsersPaged(p, pageSize);
       setUsers(res.items);
       setPage(res.page);
+      setPageSize(res.pageSize);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load users");
     } finally {
@@ -97,6 +98,7 @@ export default function Users() {
               <th className="p-3 text-left w-10">
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
+              <th className="p-3 text-left w-16">No.</th>
               <th className="p-3 text-left">User Name</th>
               <th className="p-3 text-left">Date of birth</th>
               <th className="p-3 text-left">Gmail</th>
@@ -110,19 +112,21 @@ export default function Users() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={8}>Loading…</td>
+                <td className="p-4 text-slate-500" colSpan={9}>Loading…</td>
               </tr>
             ) : error ? (
               <tr>
-                <td className="p-4 text-red-600" colSpan={8}>{error}</td>
+                <td className="p-4 text-red-600" colSpan={9}>{error}</td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={8}>No users</td>
+                <td className="p-4 text-slate-500" colSpan={9}>No users</td>
               </tr>
             ) : (
-              data.map((u) => (
-                <tr key={u.id as any} className="border-t">
+              data.map((u, idx) => {
+                const rowNumber = (page - 1) * pageSize + idx + 1;
+                return (
+                  <tr key={u.id as any} className="border-t">
                   <td className="p-3">
                     <input
                       type="checkbox"
@@ -130,6 +134,7 @@ export default function Users() {
                       onChange={() => toggle(u.id as any)}
                     />
                   </td>
+                  <td className="p-3 font-medium text-slate-500">{rowNumber}</td>
                   <td className="p-3">{u.userName}</td>
                   <td className="p-3">{fmtDate(u.dateOfBirth as any)}</td>
                   <td className="p-3">{u.email}</td>
@@ -172,7 +177,8 @@ export default function Users() {
                     </details>
                   </td>
                 </tr>
-              ))
+              );
+            })
             )}
           </tbody>
         </table>
