@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://exe-be.amayakuro.com/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://exe-be.amayakuro.com/api/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }

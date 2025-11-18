@@ -20,6 +20,8 @@ export default function Users() {
   const [selected, setSelected] = useState<Set<number | string>>(new Set());
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const refresh = async (p = page) => {
     setLoading(true);
@@ -29,8 +31,12 @@ export default function Users() {
       setUsers(res.items);
       setPage(res.page);
       setPageSize(res.pageSize);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load users");
+      setTotalPages(res.totalPages);
+      setTotalCount(res.totalCount);
+    } catch (e: unknown) {
+      const message =
+        typeof e === "object" && e && "message" in e ? String((e as { message?: unknown }).message) : null;
+      setError(message || "Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -44,13 +50,17 @@ export default function Users() {
   const toggle = (id: number | string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
   const allChecked = users.length > 0 && selected.size === users.length;
   const toggleAll = () =>
-    setSelected((_prev) => (allChecked ? new Set() : new Set(users.map((u) => u.id as any))));
+    setSelected(() => (allChecked ? new Set() : new Set(users.map((u) => u.id))));
 
   const fmtDate = (d?: string | null) =>
     !d || isNullDate(d) ? "—" : new Date(d).toLocaleDateString("vi-VN");
@@ -59,6 +69,9 @@ export default function Users() {
     () => [...users].sort((a, b) => (a.userName || "").localeCompare(b.userName || "")),
     [users]
   );
+
+  const startIndex = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIndex = totalCount === 0 ? 0 : Math.min(page * pageSize, totalCount);
 
   // Chuẩn hoá đảm bảo gửi số cho API (tránh lỗi string->number)
   const toRoleId = (r: unknown): 1 | 2 | 3 | undefined => {
@@ -72,18 +85,18 @@ export default function Users() {
 
   // Actions
   const handleMakeRole = async (u: User, r: 1 | 2 | 3) => {
-    await updateRole(u.id as any, r);
+    await updateRole(u.id, r);
     await refresh();
   };
 
   const handleSetSub = async (u: User, s: 1 | 2 | 3) => {
-    await updateUser(u.id as any, { subscriptionType: s });
+    await updateUser(u.id, { subscriptionType: s });
     await refresh();
   };
 
   const handleDelete = async (u: User) => {
     if (!confirm(`Delete user "${u.userName}"?`)) return;
-    await deleteUser(u.id as any);
+    await deleteUser(u.id);
     await refresh();
   };
 
@@ -126,17 +139,17 @@ export default function Users() {
               data.map((u, idx) => {
                 const rowNumber = (page - 1) * pageSize + idx + 1;
                 return (
-                  <tr key={u.id as any} className="border-t">
+                  <tr key={u.id} className="border-t">
                   <td className="p-3">
                     <input
                       type="checkbox"
-                      checked={selected.has(u.id as any)}
-                      onChange={() => toggle(u.id as any)}
+                      checked={selected.has(u.id)}
+                      onChange={() => toggle(u.id)}
                     />
                   </td>
                   <td className="p-3 font-medium text-slate-500">{rowNumber}</td>
                   <td className="p-3">{u.userName}</td>
-                  <td className="p-3">{fmtDate(u.dateOfBirth as any)}</td>
+                  <td className="p-3">{fmtDate(u.dateOfBirth)}</td>
                   <td className="p-3">{u.email}</td>
                   <td className="p-3">{u.phoneNumber || "—"}</td>
                   <td className="p-3">
@@ -182,6 +195,30 @@ export default function Users() {
             )}
           </tbody>
         </table>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 border-t text-sm text-slate-600">
+          <div>
+            Showing {startIndex}–{endIndex} of {totalCount} users
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+              onClick={() => refresh(Math.max(1, page - 1))}
+              disabled={page <= 1 || loading}
+            >
+              Previous
+            </button>
+            <span>
+              Page {totalPages ? Math.min(page, totalPages) : page} of {Math.max(totalPages, 1)}
+            </span>
+            <button
+              className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+              onClick={() => refresh(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages || loading}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
